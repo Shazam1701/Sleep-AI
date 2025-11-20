@@ -127,7 +127,7 @@ a través de educación, autoobservación y rutinas saludables.
 # ============================================
 # Assembly
 # ============================================
-stronger_prompt_sueño = "\n".join([
+stronger_prompt_sueno = "\n".join([
     role_section,
     security_section,
     goal_section,
