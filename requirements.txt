@@ -1,0 +1,9 @@
+streamlit==1.32.0
+python-dotenv
+openai
+numpy
+pandas
+joblib
+tensorflow-cpu==2.14.0
+soundfile
+
