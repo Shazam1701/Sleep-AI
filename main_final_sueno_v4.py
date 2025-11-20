@@ -32,13 +32,24 @@ MODEL_TTS = "gpt-4o-mini-tts"     # Texto → Voz
 
 @st.cache_resource
 def load_artifacts():
-    model = load_model("modelos/modelo_sleep.keras")
-    scaler = joblib.load("modelos/scaler_sleep.pkl")
-    label_encoder = joblib.load("modelos/label_encoder_sleep.pkl")
-    return model, scaler, label_encoder
+    try:
+        # Cargar modelo Keras
+        model = load_model("modelos/modelo_sleep.keras")
+
+        # Cargar scaler y encoder EXACTOS
+        scaler = joblib.load("modelos/scaler_sleep.pkl")
+        label_encoder = joblib.load("modelos/label_encoder_sleep.pkl")
+
+        return model, scaler, label_encoder
+
+    except Exception as e:
+        st.error(f"❌ Error cargando artefactos: {e}")
+        raise e
 
 
 model_ann, scaler_sleep, label_encoder_sleep = load_artifacts()
+
+
 
 # ============================================
 # ❓ PREGUNTAS DEL FLUJO GUIADO (VERSIÓN B SIN DAILY STEPS)
@@ -47,13 +58,12 @@ model_ann, scaler_sleep, label_encoder_sleep = load_artifacts()
 PREGUNTAS = [
     ("Age", "Para comenzar, ¿cuántos años tienes? "),
     ("Sleep Duration", "¿Cuántas horas duermes normalmente al día? (Por ejemplo: 6.5)"),
-    ("Physical Activity Level", "¿Cuál es el promedio de minutos de actividad física en tu día?"),
     ("Stress Level", "En una escala del 0 al 10 donde 0 es nada y 10 mucho, ¿qué tan estresado te encuentras?"),
-    (
-        "Heart Rate",
+    ("Heart Rate",
         "¿Cuál es tu frecuencia cardíaca en reposo? La normal en un adulto sano es de 60 a 100 lpm. "
         "Para medirla, coloca el dedo índice y medio en el cuello o muñeca y cuenta los latidos por 15 segundos, la cantidad obtenida multiplicala por 4"
     ),
+    ("Physical Activity Level", "¿Cuál es el promedio de minutos de actividad física en tu día?"),
 ]
 
 FEATURE_ORDER = [key for key, _ in PREGUNTAS]
@@ -433,9 +443,9 @@ def manejar_respuesta_analisis(user_text: str):
     - Al final llama al ANN, genera reporte y audio
     """
 
-    # ===============================
-    # 🔥 PROCESAR RESULTADO SI YA SE MOSTRÓ EL MENSAJE DE CARGA
-    # ===============================
+    # =====================================================================
+    # 🔥 SI YA SE ACTIVÓ EL PROCESAMIENTO, GENERAMOS LA PREDICCIÓN DIRECTO
+    # =====================================================================
     if st.session_state.get("procesando_resultado", False):
 
         inputs = st.session_state["inputs_usuario"].copy()
@@ -491,7 +501,7 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
             "audio": audio,
         })
 
-        # Reset del flujo
+        # RESET DEL FLUJO
         st.session_state["procesando_resultado"] = False
         st.session_state["modo_analisis"] = False
         st.session_state["indice_pregunta"] = 0
@@ -500,9 +510,9 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         st.rerun()
         return
 
-    # ===============================
-    # 🛑 Comandos especiales
-    # ===============================
+    # =====================================================================
+    # 🛑 COMANDOS ESPECIALES
+    # =====================================================================
     comando = detectar_comando_especial(user_text or "")
     if comando == "cancelar":
         st.session_state["modo_analisis"] = False
@@ -525,12 +535,11 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         })
         return
 
-    # ===============================
-    # 🧠 CONTROL DE ÍNDICE (PARCHE ANTI-INDEXERROR)
-    # ===============================
+    # =====================================================================
+    # 🧠 PARCHE ANTI-INDEXERROR
+    # =====================================================================
     idx = st.session_state.get("indice_pregunta", 0)
 
-    # Si por cualquier razón el índice es inválido → reiniciar flujo sin romper nada
     if not isinstance(idx, int) or idx < 0 or idx >= len(PREGUNTAS):
         st.session_state["modo_analisis"] = True
         st.session_state["indice_pregunta"] = 0
@@ -545,31 +554,26 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         })
         return
 
-    # ===============================
-    # 🔢 Validación de la pregunta actual
-    # ===============================
+    # =====================================================================
+    # 🔢 VALIDACIÓN DE RESPUESTA NUMÉRICA
+    # =====================================================================
     key, _ = PREGUNTAS[idx]
-
     valor, error_msg = validar_respuesta_numerica(user_text, key)
 
-    # Si el usuario mete un valor inválido → NO avanzar
     if error_msg:
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": error_msg
-        })
+        st.session_state.messages.append({"role": "assistant", "content": error_msg})
         st.rerun()
         return
 
-    # ===============================
-    # 📝 Guardar valor válido
-    # ===============================
+    # =====================================================================
+    # 📝 GUARDAR RESPUESTA
+    # =====================================================================
     st.session_state["inputs_usuario"][key] = valor
     st.session_state["indice_pregunta"] += 1
 
-    # ===============================
-    # ❓ ¿Quedan preguntas?
-    # ===============================
+    # =====================================================================
+    # ❓ ¿AÚN HAY PREGUNTAS?
+    # =====================================================================
     if st.session_state["indice_pregunta"] < len(PREGUNTAS):
         _, siguiente_txt = PREGUNTAS[st.session_state["indice_pregunta"]]
         st.session_state.messages.append({
@@ -579,84 +583,16 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         st.rerun()
         return
 
-    # ===============================
-    # 🏁 FIN DEL FLUJO → activar cálculo del modelo ANN
-    # ===============================
-    # Ya tenemos todas las respuestas válidas
+    # =====================================================================
+    # 🏁 FIN DEL FLUJO → ACTIVAR PREDICCIÓN ANN
+    # =====================================================================
     st.session_state["procesando_resultado"] = True
 
-    # Mostrar SOLO el mensaje de “procesando”
     st.session_state.messages.append({
         "role": "assistant",
         "content": "⏳ Procesando tu información... dame unos segundos 😴🌙"
     })
 
-    # Forzamos un nuevo ciclo de ejecución donde se disparará el bloque de arriba
-    st.rerun()
-    with st.spinner("🧠 Analizando tu patrón de sueño..."):
-        clase, proba = predecir_calidad_sueno(inputs)
-
-    if clase == "Unknown":
-        txt_final = (
-            "⚠️ Ocurrió un problema al procesar tu información con el modelo de sueño. "
-            "Por favor, verifica tus respuestas o intenta nuevamente más tarde."
-        )
-        audio = generar_audio(txt_final)
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": txt_final,
-            "audio": audio,
-        })
-    else:
-        recomendaciones_por_clase = {
-            "Excelente": [
-                "Mantén una rutina de sueño consistente.",
-                "Evita pantallas al menos 45 minutos antes de dormir.",
-                "Procura mantener tus buenos hábitos de descanso."
-            ],
-            "Buena": [
-                "Intenta dormir entre 7 y 8 horas reales.",
-                "Reduce la cafeína después de las 4 PM.",
-                "Establece horarios más constantes para acostarte."
-            ],
-            "Regular": [
-                "Tu descanso podría mejorar significativamente.",
-                "Mejora tu higiene del sueño (luz, ruido, temperatura).",
-                "Considera técnicas de manejo de estrés o hablar con un especialista si persiste."
-            ],
-        }
-
-        rec = recomendaciones_por_clase.get(clase, ["Mejora tus hábitos de sueño."])
-        while len(rec) < 3:
-            rec.append("Continúa mejorando tus hábitos para un mejor descanso.")
-
-
-        reporte = generar_reporte_ejecutivo(inputs)
-
-        txt_final = f"""
-😴 **Resultados de tu evaluación del sueño**
-
-📌 Calidad estimada de tu sueño: **{clase}**
-
-💡 **Recomendaciones personalizadas:**
-- {rec[0]}
-- {rec[1]}
-- {rec[2]}
-
-📘 **Reporte Ejecutivo Personalizado**
-{reporte}
-
-Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
-"""
-
-        audio = generar_audio(txt_final)
-
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": txt_final,
-            "audio": audio,
-        })
-    
     st.rerun()
 
     # Reset del flujo
