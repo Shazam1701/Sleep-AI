@@ -606,11 +606,11 @@ if user_prompt:
 
     # Si estamos en modo análisis → usamos flujo ANN robusto
     with st.spinner("Analizando tus patrones de sueño... 😴"):
-    stream = client_openai.chat.completions.create(
-        model=MODEL_CHAT,
-        messages=conversation,
-        stream=True
-    )
+        stream = client_openai.chat.completions.create(
+            model=MODEL_CHAT,
+            messages=conversation,
+            stream=True
+        )
 
     # Recoger texto generado
     respuesta = ""
