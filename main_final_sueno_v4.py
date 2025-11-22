@@ -605,24 +605,35 @@ if user_prompt:
     st.chat_message("user").write(user_display or user_prompt)
 
     # Si estamos en modo análisis → usamos flujo ANN robusto
-    if st.session_state["modo_analisis"]:
-        manejar_respuesta_analisis(user_prompt)
-    else:
-        # Conversación libre con el modelo de lenguaje
-        conversation = [{"role": "system", "content": stronger_prompt_sueno}]
-        conversation.extend(
-            {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages
-        )
+    with st.spinner("Analizando tus patrones de sueño... 😴"):
+    stream = client_openai.chat.completions.create(
+        model=MODEL_CHAT,
+        messages=conversation,
+        stream=True
+    )
 
-        with st.chat_message("assistant"):
-            with st.spinner("Analizando tus patrones de sueño... 😴"):
-                stream = client_openai.chat.completions.create(
-                    model=MODEL_CHAT,
-                    messages=conversation,
-                    stream=True
-                )
-                respuesta = st.write_stream(stream)
+    # Recoger texto generado
+    respuesta = ""
+    for chunk in stream:
+        if "choices" in chunk and len(chunk["choices"]) > 0:
+            delta = chunk["choices"][0]["delta"]
+            if "content" in delta:
+                respuesta += delta["content"]
+
+    # Crear mensaje completo con texto + audio
+    audio_bytes = generar_audio(respuesta)
+
+    nuevo_msg = {
+        "role": "assistant",
+        "content": respuesta,
+        "audio": audio_bytes
+    }
+
+    # Guardarlo en session_state
+    st.session_state.messages.append(nuevo_msg)
+
+    # Rerenderizar chat completo
+    st.rerun()
 
         # Guardar respuesta como texto
         nuevo_msg = {"role": "assistant", "content": respuesta}
