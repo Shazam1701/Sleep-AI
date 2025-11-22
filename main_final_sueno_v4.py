@@ -591,6 +591,7 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
     st.session_state["indice_pregunta"] = 0
     st.session_state["inputs_usuario"] = {}
 
+
 # ============================================
 # 🚀 Procesamiento automático tras el mensaje de carga
 # ============================================
@@ -599,48 +600,61 @@ if st.session_state.get("procesando_resultado", False):
     manejar_respuesta_analisis("")   # ejecuta siguiente paso sin requerir prompt
 
 
+# ============================================
+# 🚀 CHAT NORMAL (CON AUDIO SIN ESPERAR OTRO MENSAJE)
+# ============================================
+
 if user_prompt:
     # Mostrar mensaje del usuario
     st.session_state.messages.append({"role": "user", "content": user_prompt})
     st.chat_message("user").write(user_display or user_prompt)
 
     # Si estamos en modo análisis → usamos flujo ANN robusto
-    with st.spinner("Analizando tus patrones de sueño... 😴"):
-        stream = client_openai.chat.completions.create(
-            model=MODEL_CHAT,
-            messages=conversation,
-            stream=True
-        )
+    if st.session_state["modo_analisis"]:
+        manejar_respuesta_analisis(user_prompt)
+        st.rerun()
 
-    # Recoger texto generado
-    respuesta = ""
-    for chunk in stream:
-        if "choices" in chunk and len(chunk["choices"]) > 0:
-            delta = chunk["choices"][0]["delta"]
-            if "content" in delta:
-                respuesta += delta["content"]
+    # Conversación libre con el modelo de lenguaje
+    conversation = [{"role": "system", "content": stronger_prompt_sueno}]
+    conversation.extend(
+        {"role": m["role"], "content": m["content"]}
+        for m in st.session_state.messages
+    )
 
-    # Crear mensaje completo con texto + audio
+    # Crear contenedor temporal para el mensaje
+    placeholder = st.chat_message("assistant")
+
+    with placeholder:
+        with st.spinner("Analizando tus patrones de sueño... 😴"):
+            stream = client_openai.chat.completions.create(
+                model=MODEL_CHAT,
+                messages=conversation,
+                stream=True
+            )
+
+        # Recoger texto generado desde el stream
+        respuesta = ""
+        for chunk in stream:
+            if "choices" in chunk and len(chunk["choices"]) > 0:
+                delta = chunk["choices"][0]["delta"]
+                if "content" in delta:
+                    respuesta += delta["content"]
+
+        # Mostrar texto parcial en el placeholder
+        placeholder.write(respuesta)
+
+    # Generar audio
     audio_bytes = generar_audio(respuesta)
 
+    # Crear mensaje final
     nuevo_msg = {
         "role": "assistant",
         "content": respuesta,
         "audio": audio_bytes
     }
 
-    # Guardarlo en session_state
+    # Agregar a session_state
     st.session_state.messages.append(nuevo_msg)
 
-    # Rerenderizar chat completo
+    # Rerenderizar para que aparezca el audio correctamente
     st.rerun()
-
-        # Guardar respuesta como texto
-        nuevo_msg = {"role": "assistant", "content": respuesta}
-
-        # Generar audio de la respuesta (como en el diseño original)
-        audio_bytes = generar_audio(respuesta)
-        if audio_bytes:
-            nuevo_msg["audio"] = audio_bytes
-
-        st.session_state.messages.append(nuevo_msg)
