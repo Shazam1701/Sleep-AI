@@ -13,7 +13,10 @@ import joblib
 from prompts_sueno import stronger_prompt_sueno
 
 # ============================================
-# 🔧 CONFIGURACIÓN INICIAL (API + MODELO)
+# CONFIGURACIÓN INICIAL (API + MODELO)
+# Carga claves de OpenAI, 
+# inicializa modelos Whisper / GPT-4o y carga }
+# el modelo ANN, scaler y label encoder.
 # ============================================
 
 load_dotenv(override=True)
@@ -36,7 +39,7 @@ def load_artifacts():
         # Cargar modelo Keras
         model = load_model("modelos/modelo_sleep.keras")
 
-        # Cargar scaler y encoder EXACTOS
+        # Cargar scaler y encoder
         scaler = joblib.load("modelos/scaler_sleep.pkl")
         label_encoder = joblib.load("modelos/label_encoder_sleep.pkl")
 
@@ -52,7 +55,7 @@ model_ann, scaler_sleep, label_encoder_sleep = load_artifacts()
 
 
 # ============================================
-# ❓ PREGUNTAS DEL FLUJO GUIADO (VERSIÓN B SIN DAILY STEPS)
+# ❓ PREGUNTAS DEL FLUJO GUIADO
 # ============================================
 
 PREGUNTAS = [
@@ -66,12 +69,11 @@ FEATURE_ORDER = [key for key, _ in PREGUNTAS]
 
 
 # ============================================
-# 🧠 FUNCIONES AUXILIARES
+# FUNCIONES AUXILIARES
 # ============================================
 
 def extraer_numero(texto, tipo="float"):
     """
-    Versión genérica (se mantiene por compatibilidad, aunque el flujo guiado usa validar_respuesta_numerica).
     Extrae el primer número del texto.
     tipo: "int" o "float"
     """
@@ -94,7 +96,7 @@ def predecir_calidad_sueno(input_dict):
     """
     Usa el modelo ANN para estimar la calidad del sueño.
 
-    Versión robusta tipo v3:
+    Versión robusta:
     - Respeta FEATURE_ORDER
     - Maneja errores del modelo
     - Devuelve clase y diccionario de probabilidades por etiqueta
@@ -125,7 +127,7 @@ def predecir_calidad_sueno(input_dict):
 def generar_audio(texto):
     """
     Genera audio en MP3 a partir de un texto usando TTS.
-    (Se mantiene voz 'alloy' como en el diseño original estable)
+
     """
     try:
         speech = client_openai.audio.speech.create(
@@ -141,7 +143,7 @@ def generar_audio(texto):
 
 
 # ============================================
-# 📘 REPORTE EJECUTIVO (DE V3, SIN PASOS)
+# REPORTE EJECUTIVO
 # ============================================
 
 def generar_reporte_ejecutivo(inputs):
@@ -202,7 +204,7 @@ def generar_reporte_ejecutivo(inputs):
     if actividad is not None:
         if actividad < 30:
             recomendaciones.append(
-                "Tu actividad física es baja. Caminar al menos 30 minutos al día puede mejorar significativamente tu calidad de sueño."
+                "Tu actividad física es baja. Caminar a paso rapido o trotar al menos 30 minutos al día puede mejorar significativamente tu calidad de sueño."
             )
         elif actividad < 60:
             recomendaciones.append(
@@ -223,7 +225,7 @@ def generar_reporte_ejecutivo(inputs):
 
 
 # ============================================
-# 🧠 COMANDOS ESPECIALES (CANCELAR / REINICIAR)
+# COMANDOS ESPECIALES (CANCELAR / REINICIAR)
 # ============================================
 
 def detectar_comando_especial(texto):
@@ -285,7 +287,7 @@ def validar_respuesta_numerica(texto, key):
 
 
 # ============================================
-# 🧠 ESTADO INICIAL (SESSION STATE)
+# ESTADO INICIAL (SESSION STATE)
 # ============================================
 
 if "messages" not in st.session_state:
@@ -293,9 +295,9 @@ if "messages" not in st.session_state:
         {
             "role": "assistant",
             "content": (
-                "Hola, soy SleepIA. "
-                "Podemos platicar de tus hábitos de sueño o, si quieres, "
-                "puedo hacerte unas preguntas para analizar tu calidad de descanso con un modelo de IA."
+                "Hola! Soy SleepIA. "
+                "Podemos platicar de tus hábitos de sueño o, si lo prefieres, "
+                "puedo hacerte unas preguntas para analizar tu calidad de descanso con un modelo de Inteligencia Artificial."
             ),
         }
     ]
@@ -311,10 +313,10 @@ if "indice_pregunta" not in st.session_state:
 
 
 # ============================================
-# 🎨 CONFIGURACIÓN DE INTERFAZ (DISEÑO ORIGINAL)
+# ONFIGURACIÓN DE INTERFAZ 
 # ============================================
 
-st.set_page_config(page_title="SleepIA", page_icon="😴")
+st.set_page_config(page_title="SleepIA", page_icon="🌙 😴 💤")
 st.title("💤 Sleep AI")
 st.caption("🌙 Soy un Chat LLM con un Modelo de Red Neuronal Artificial que clasifica la calidad del sueño promedio")
 
@@ -330,11 +332,21 @@ with chat_container:
 
 
 # ============================================
-# 🎛️ SIDEBAR: CONTROLES (DISEÑO ORIGINAL)
+# SIDEBAR: CONTROLES
 # ============================================
 
 with st.sidebar:
     st.subheader("🎧 Entrada por voz")
+    
+    st.markdown("""
+    **Cómo usar la entrada por voz:**
+    1. Presiona el microfono para Grabar audio.
+    2. Habla con normalidad (máximo 15–20 segundos).
+    3. Da clic en el boton de Detener (De color rojo)
+    4. Da clic en **Enviar audio** para transcribirlo.
+    
+    > Tip: Puedes responder preguntas del modelo con esta funcion.
+    """)
     audio_input = st.audio_input("Graba un mensaje de voz (opcional)")
     send_audio = st.button("Enviar audio", use_container_width=True)
 
@@ -375,7 +387,7 @@ if iniciar_analisis:
         st.rerun()
 
 # ============================================
-# 📝 ENTRADA DE TEXTO / AUDIO
+# ENTRADA DE TEXTO / AUDIO
 # ============================================
 
 user_prompt = None
@@ -411,7 +423,7 @@ elif send_audio:
 
 
 # ============================================
-# 🔁 LÓGICA PRINCIPAL: CHAT + FLUJO ANN (VERSIÓN B)
+# LÓGICA PRINCIPAL: CHAT + FLUJO ANN (VERSIÓN B)
 # ============================================
 
 def manejar_respuesta_analisis(user_text: str):
@@ -423,7 +435,7 @@ def manejar_respuesta_analisis(user_text: str):
     """
 
     # =====================================================================
-    # 🔥 SI YA SE ACTIVÓ EL PROCESAMIENTO, GENERAMOS LA PREDICCIÓN DIRECTO
+    # SI YA SE ACTIVÓ EL PROCESAMIENTO, GENERAMOS LA PREDICCIÓN DIRECTO
     # =====================================================================
     if st.session_state.get("procesando_resultado", False):
 
@@ -490,7 +502,7 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         return
 
     # =====================================================================
-    # 🛑 COMANDOS ESPECIALES
+    # COMANDOS ESPECIALES
     # =====================================================================
     comando = detectar_comando_especial(user_text or "")
     if comando == "cancelar":
@@ -515,7 +527,7 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         return
 
     # =====================================================================
-    # 🧠 PARCHE ANTI-INDEXERROR
+    # PARCHE ANTI-INDEXERROR
     # =====================================================================
     idx = st.session_state.get("indice_pregunta", 0)
 
@@ -534,7 +546,7 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         return
 
     # =====================================================================
-    # 🔢 VALIDACIÓN DE RESPUESTA NUMÉRICA
+    # VALIDACIÓN DE RESPUESTA NUMÉRICA
     # =====================================================================
     key, _ = PREGUNTAS[idx]
     valor, error_msg = validar_respuesta_numerica(user_text, key)
@@ -545,13 +557,13 @@ Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
         return
 
     # =====================================================================
-    # 📝 GUARDAR RESPUESTA
+    # GUARDAR RESPUESTA
     # =====================================================================
     st.session_state["inputs_usuario"][key] = valor
     st.session_state["indice_pregunta"] += 1
 
     # =====================================================================
-    # ❓ ¿AÚN HAY PREGUNTAS?
+    # ¿AÚN HAY PREGUNTAS?
     # =====================================================================
     if st.session_state["indice_pregunta"] < len(PREGUNTAS):
         _, siguiente_txt = PREGUNTAS[st.session_state["indice_pregunta"]]
