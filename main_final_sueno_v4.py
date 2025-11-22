@@ -59,10 +59,6 @@ PREGUNTAS = [
     ("Age", "Para comenzar, ¿cuántos años tienes? "),
     ("Sleep Duration", "¿Cuántas horas duermes normalmente al día? (Por ejemplo: 6.5)"),
     ("Stress Level", "En una escala del 0 al 10 donde 0 es nada y 10 mucho, ¿qué tan estresado te encuentras?"),
-    ("Heart Rate",
-        "¿Cuál es tu frecuencia cardíaca en reposo? La normal en un adulto sano es de 60 a 100 lpm. "
-        "Para medirla, coloca el dedo índice y medio en el cuello o muñeca y cuenta los latidos por 15 segundos, la cantidad obtenida multiplicala por 4"
-    ),
     ("Physical Activity Level", "¿Cuál es el promedio de minutos de actividad física en tu día?"),
 ]
 
@@ -152,7 +148,6 @@ def generar_reporte_ejecutivo(inputs):
     edad = inputs.get("Age")
     duracion = inputs.get("Sleep Duration")
     estres = inputs.get("Stress Level")
-    frecuencia = inputs.get("Heart Rate")
     actividad = inputs.get("Physical Activity Level")
 
     recomendaciones = []
@@ -202,20 +197,6 @@ def generar_reporte_ejecutivo(inputs):
                 "Tu nivel de estrés es bajo, lo cual favorece un sueño más profundo y reparador. ¡Sigue así!"
             )
 
-    # Frecuencia cardiaca
-    if frecuencia is not None:
-        if frecuencia > 85:
-            recomendaciones.append(
-                "Tu frecuencia cardíaca en reposo es relativamente alta; podría estar asociada a estrés, poca actividad física o falta de descanso."
-            )
-        elif frecuencia < 55:
-            recomendaciones.append(
-                "Tu frecuencia cardíaca es baja; esto suele relacionarse con buen estado físico, salvo que tengas síntomas de fatiga extrema."
-            )
-        else:
-            recomendaciones.append(
-                "Tu frecuencia cardíaca en reposo está en un rango saludable."
-            )
 
     # Actividad física
     if actividad is not None:
@@ -299,8 +280,6 @@ def validar_respuesta_numerica(texto, key):
         return None, "Los minutos de actividad física no pueden ser negativos."
     if key == "Stress Level" and not (0 <= valor <= 10):
         return None, "El nivel de estrés debe estar entre 0 y 10."
-    if key == "Heart Rate" and not (20 <= valor <= 220):
-        return None, "La frecuencia cardíaca en reposo debería estar entre 20 y 220 lpm."
 
     return valor, None
 
