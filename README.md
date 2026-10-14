@@ -71,4 +71,5 @@ Al finalizar, SleepIA reproduce en voz alta tu diagnóstico completo.
 
 7. Modelo
 Para poder ejecutar el programa accede al siguiente enlace y da click en *Iniciar preguntas del modelo*
+
 [https://github.com/Shazam1701/Ecobici_CDMX_Analysis/tree/main](https://sleep-ai-4he4df5suutxy73lrwqlaq.streamlit.app/)
