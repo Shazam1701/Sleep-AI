@@ -18,8 +18,8 @@ Escuchar el diagnóstico en audio
 
 Visualizar probabilidades y recomendaciones
 
-✨ Características Principales
-🧠 1. Chat Inteligente (Texto y Voz)
+Características Principales
+1. Chat Inteligente (Texto y Voz)
 
 Conversación natural con GPT-4o-mini
 
@@ -31,11 +31,11 @@ Capacidad de análisis y explicación en lenguaje claro
 
 Respuestas opcionalmente sintetizadas con voz TTS
 
-🎤 2. Entrada de Audio (Whisper)
+2. Entrada de Audio (Whisper)
 
 Puedes grabar tu voz y SleepIA transcribirá el mensaje automáticamente usando Whisper-1.
 
-🔢 3. Recolección Guiada de Datos
+3. Recolección Guiada de Datos
 
 El chatbot te hará preguntas sobre:
 
@@ -51,7 +51,7 @@ Frecuencia cardiaca
 
 SleepIA valida la respuesta, extrae datos numéricos y avanza automáticamente.
 
-🤖 4. Modelo ANN para Clasificación
+4. Modelo ANN para Clasificación
 
 Una red neuronal entrenada con datos fisiológicos reales estima tu calidad del sueño en cuatro categorías:
 
@@ -65,6 +65,10 @@ Mala
 
 También muestra probabilidades detalladas y recomendaciones personalizadas.
 
-🔊 5. Diagnóstico con TTS
+5. Diagnóstico con TTS
 
 Al finalizar, SleepIA reproduce en voz alta tu diagnóstico completo.
+
+7. Modelo
+Para poder ejecutar el programa accede al siguiente enlace y da click en *Iniciar preguntas del modelo*
+[https://github.com/Shazam1701/Ecobici_CDMX_Analysis/tree/main](https://sleep-ai-4he4df5suutxy73lrwqlaq.streamlit.app/)
