@@ -11,5 +11,5 @@ tensorflow-cpu==2.14.0
 matplotlib==3.8.4
 seaborn==0.13.2
 
-#protobuf==4.25.3
+protobuf==4.25.3
 
