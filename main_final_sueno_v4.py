@@ -483,23 +483,27 @@ def manejar_respuesta_analisis(user_text: str):
 
 Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
 """
+        audio = None
 
-        audio = generar_audio(txt_final)
+        # audio = generar_audio(txt_final)
 
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": txt_final,
-            "audio": audio,
-        })
+        # st.session_state.messages.append({
+        #     "role": "assistant",
+        #     "content": txt_final,
+        #     "audio": audio,
+        # })
 
-        # RESET DEL FLUJO
-        st.session_state["procesando_resultado"] = False
-        st.session_state["modo_analisis"] = False
-        st.session_state["indice_pregunta"] = 0
-        st.session_state["inputs_usuario"] = {}
+        # # RESET DEL FLUJO
+        # st.session_state["procesando_resultado"] = False
+        # st.session_state["modo_analisis"] = False
+        # st.session_state["indice_pregunta"] = 0
+        # st.session_state["inputs_usuario"] = {}
 
-        st.rerun()
-        return
+        # st.rerun()
+        # return
+    
+
+    
 
     # =====================================================================
     # COMANDOS ESPECIALES
