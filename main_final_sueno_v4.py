@@ -483,7 +483,23 @@ def manejar_respuesta_analisis(user_text: str):
 
 Si deseas otra evaluación, puedes indicarlo cuando quieras 🤍
 """
+        # Audio desactivado temporalmente para aislar el problema
         audio = None
+        # Mostrar el reporte final en el chat
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": txt_final,
+            "audio": audio,
+        })
+
+        # Reiniciar el flujo de evaluación
+        st.session_state["procesando_resultado"] = False
+        st.session_state["modo_analisis"] = False
+        st.session_state["indice_pregunta"] = 0
+        st.session_state["inputs_usuario"] = {}
+
+        st.rerun()
+        return
 
         # audio = generar_audio(txt_final)
 
